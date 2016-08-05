@@ -19,6 +19,7 @@ DAEInit = "{http://www.collada.org/2005/11/COLLADASchema}init_from"
 DAEInput = "{http://www.collada.org/2005/11/COLLADASchema}input"
 DAEFloats = "{http://www.collada.org/2005/11/COLLADASchema}float_array"
 DAESource = "{http://www.collada.org/2005/11/COLLADASchema}source"
+DAEInstance = "{http://www.collada.org/2005/11/COLLADASchema}instance_geometry"
 
 ##Material Schemas
 DAELibMaterials = "{http://www.collada.org/2005/11/COLLADASchema}library_materials"
@@ -121,7 +122,40 @@ def CreateJoint(jnt_name,jnt_locn,jnt_rotn,jnt_context):
 	this_jnt.location.y = float(jnt_locn[1])
 	this_jnt.location.z = float(jnt_locn[2])
 	return this_jnt
-		
+
+def CheckForChildren(node,context):
+    for item in node:
+        #if "instance_geometry" in item.tag:
+        #    print("found instance")
+        #    for geo in root.iter(DAEGeo):
+        #        if geo.attrib["id"] is item.attrib["url"].lstrip("#"):
+        #            child = D.objects[item.attrib["url"].lstrip("#")]
+        #            print(child.name)
+         #           parent = D.objects[node.attrib["name"][0:63]]
+          #          print(parent.name)
+           #         child.parent = parent
+            #        CheckForChildren(item,context)
+        if "node" in item.tag:                                
+            if bpy.data.objects.get(item.attrib["name"][0:63]) is None:
+                for i in item:
+                    if "instance_geometry" in i.tag:
+                        print("found instance")
+                        url = i.attrib["url"].lstrip("#")
+                        print(url)
+                        for geo in root.iter(DAEGeo):
+                            if geo.attrib["id"] == url:
+                                child = D.objects[geo.attrib["name"]]
+                                parent = D.objects[node.attrib["name"][0:63]]
+                                child.parent = parent
+                                CheckForChildren(item,context)
+            else:
+                child = D.objects[item.attrib["name"][0:63]]
+                parent = D.objects[node.attrib["name"][0:63]]
+                child.parent = parent
+                CheckForChildren(item,context)
+        
+
+
 ################
 #XML Processing#
 ################
@@ -161,7 +195,7 @@ for joint in root.iter(DAENode): # find all <node> in the file
 	is_joint = True
 	for item in joint:
 		if "instance_geometry" in item.tag:
-			#print("this is a mesh:" + item.attrib["url"])
+			print("this is a mesh:" + item.attrib["url"])
 			is_joint = False
 	# If this is a joint, make it!
 	if is_joint:
@@ -264,9 +298,19 @@ for geo in root.iter(DAEGeo):
     C.scene.objects.active = ob
     bpy.ops.object.join()
     ob.data.use_auto_smooth = True
+    bpy.ops.object.editmode_toggle()
+    bpy.ops.mesh.remove_doubles()
+    bpy.ops.object.editmode_toggle()
     ob.select = False
     
-    
+# Sort out hierarchy
+for child in root:
+	if "library_visual_scenes" in child.tag:
+		for grandchild in child:
+			if "visual_scene" in grandchild.tag:
+				for node in grandchild:
+					if "node" in node.tag:
+						CheckForChildren(node,C)
 		
 			
 	
