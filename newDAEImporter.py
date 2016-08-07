@@ -40,10 +40,15 @@ DAEVerts = "{http://www.collada.org/2005/11/COLLADASchema}vertices"
 DAETris = "{http://www.collada.org/2005/11/COLLADASchema}triangles"
 DAEp = "{http://www.collada.org/2005/11/COLLADASchema}p"
 
+#Animation Schemas
+DAELibAnims = "{http://www.collada.org/2005/11/COLLADASchema}library_animations"
+DAEAnim = "{http://www.collada.org/2005/11/COLLADASchema}animation"
+DAEChannel = "{http://www.collada.org/2005/11/COLLADASchema}channel"
+
 ###########
 #Functions#
 ###########
-DAEPath = "F:\\Program Files\\Steam\\steamapps\\workshop\\content\\244160\\409273414\Tai_Interceptor\\"
+DAEPath = "F:\\Program Files\\Steam\\steamapps\\workshop\\content\\244160\\426296252\\Kus_SupportFrigate\\"
 
 def makeTextures(name, path):
 	D.textures.new(name, 'IMAGE')	
@@ -125,23 +130,12 @@ def CreateJoint(jnt_name,jnt_locn,jnt_rotn,jnt_context):
 
 def CheckForChildren(node,context):
     for item in node:
-        #if "instance_geometry" in item.tag:
-        #    print("found instance")
-        #    for geo in root.iter(DAEGeo):
-        #        if geo.attrib["id"] is item.attrib["url"].lstrip("#"):
-        #            child = D.objects[item.attrib["url"].lstrip("#")]
-        #            print(child.name)
-         #           parent = D.objects[node.attrib["name"][0:63]]
-          #          print(parent.name)
-           #         child.parent = parent
-            #        CheckForChildren(item,context)
+        
         if "node" in item.tag:                                
             if bpy.data.objects.get(item.attrib["name"][0:63]) is None:
                 for i in item:
                     if "instance_geometry" in i.tag:
-                        print("found instance")
                         url = i.attrib["url"].lstrip("#")
-                        print(url)
                         for geo in root.iter(DAEGeo):
                             if geo.attrib["id"] == url:
                                 child = D.objects[geo.attrib["name"]]
@@ -161,7 +155,7 @@ def CheckForChildren(node,context):
 ################
 
 #More Dom2 code here
-tree = ET.parse("F:\\Program Files\\Steam\\steamapps\\workshop\\content\\244160\\409273414\\Tai_Interceptor\\Tai_Interceptor.dae")
+tree = ET.parse("F:\\Program Files\\Steam\\steamapps\\workshop\\content\\244160\\426296252\\Kus_SupportFrigate\\Kus_SupportFrigate.dae")
 root = tree.getroot()
 
 print(" ")
@@ -170,36 +164,37 @@ print(" ")
 
 # Create joints
 for joint in root.iter(DAENode): # find all <node> in the file
-	# Joint name
-	joint_name = joint.attrib["name"]
-	# Joint location
-	joint_location = joint.find(DAETranslation)
-	if joint_location == None:
-		joint_location = ['0','0','0'] # If there is no translation specified, default to 0,0,0
-	else:
-		joint_location = joint_location.text.split()
-	# Joint rotation
-	joint_rotationX = 0.0
-	joint_rotationY = 0.0
-	joint_rotationZ = 0.0
-	for rot in joint:
-		if "rotate" in rot.tag:
-			if "rotateX" in rot.attrib["sid"]:
-				joint_rotationX = float(rot.text.split()[3])
-			elif "rotateY" in rot.attrib["sid"]:
-				joint_rotationY = float(rot.text.split()[3])
-			elif "rotateZ" in rot.attrib["sid"]:
-				joint_rotationZ = float(rot.text.split()[3])
-	joint_rotation = [joint_rotationX,joint_rotationY,joint_rotationZ]
-	# Joint or mesh?
-	is_joint = True
-	for item in joint:
-		if "instance_geometry" in item.tag:
-			print("this is a mesh:" + item.attrib["url"])
-			is_joint = False
-	# If this is a joint, make it!
-	if is_joint:
-		CreateJoint(joint_name, joint_location,joint_rotation,C)
+    # Joint name
+    joint_name = joint.attrib["name"]
+    print(joint_name)
+    # Joint location
+    joint_location = joint.find(DAETranslation)
+    if joint_location == None:
+        joint_location = ['0','0','0'] # If there is no translation specified, default to 0,0,0
+    else:
+        joint_location = joint_location.text.split()
+    # Joint rotation
+    joint_rotationX = 0.0
+    joint_rotationY = 0.0
+    joint_rotationZ = 0.0
+    for rot in joint:
+        if "rotate" in rot.tag:
+            if "rotateX" in rot.attrib["sid"]:
+                joint_rotationX = float(rot.text.split()[3])
+            elif "rotateY" in rot.attrib["sid"]:
+                joint_rotationY = float(rot.text.split()[3])
+            elif "rotateZ" in rot.attrib["sid"]:
+                joint_rotationZ = float(rot.text.split()[3])
+    joint_rotation = [joint_rotationX,joint_rotationY,joint_rotationZ]
+    # Joint or mesh?
+    is_joint = True
+    for item in joint:
+        if "instance_geometry" in item.tag:
+            print("this is a mesh:" + item.attrib["url"])
+            is_joint = False
+    # If this is a joint, make it!
+    if is_joint:
+        CreateJoint(joint_name, joint_location,joint_rotation,C)
 		
 #My code starts here - DL
 
@@ -255,11 +250,7 @@ for geo in root.iter(DAEGeo):
     print("Num of UVs: "+str(len(UVs)))        
     vertPositions = [rawVerts[i:i+3] for i in range(0, len(rawVerts),3)]
     meshNormals = [rawNormals[i:i+3] for i in range(0, len(rawNormals),3)]
-    #print(vertPositions)
-    #print(meshNormals)		
-    #for u in range(0,len(UVs)):
-    #    print("UV" + str(u))
-    #   print(UVs[u])
+    
     
     subMeshes = []
     
@@ -291,6 +282,7 @@ for geo in root.iter(DAEGeo):
         
         subMeshes.append(meshBuilder(material, vertPositions, meshNormals, UVs, vertOffset, normOffset, UVOffsets, pArray))
     
+    #Combines the material submeshes into one mesh
     for obs in subMeshes:
         obs.select = True
     
@@ -312,7 +304,47 @@ for child in root:
 					if "node" in node.tag:
 						CheckForChildren(node,C)
 		
-			
-	
-	
+#Animations	
+animLib = root.find(DAELibAnims)
+for anim in animLib.iter(DAEAnim):
+    #print(animLib.getchildren().index(anim))
+    if anim.find(DAESource):
+        frames = []
+        locs = []
+        #D.objects[animLib[(animLib.getchildren().index(anim)-1)].attrib["name"]].select = True
+        for source in anim.iter(DAESource):           
+            print(source.attrib["id"])
+            if "input" in source.attrib["id"].lower():
+                frames = [float(i) for i in source.find(DAEFloats).text.split()]
+                print(frames)
+            elif "output" in source.attrib["id"].lower():
+                locs = [float(i) for i in source.find(DAEFloats).text.split()]
+                print(locs)
+        #D.objects[(anim.find(DAEChannel).attrib["target"].split("/")[0])].select = True
+        channel = anim.find(DAEChannel).attrib["target"].split("/")[1]
+        object = D.objects[anim.find(DAEChannel).attrib["target"].split("/")[0]]
+        for f in range(0, len(frames)):
+            currentFrame = (frames[f]*C.scene.render.fps)
+            if "translate" in channel.lower():
+                if "x" in channel.lower():
+                    object.location.x =  locs[f]
+                    object.keyframe_insert(data_path = 'location',index = 0, frame = currentFrame)
+                elif "y" in channel.lower():
+                    object.location.y =  locs[f]
+                    object.keyframe_insert(data_path = 'location',index = 1, frame = currentFrame)
+                elif "z" in channel.lower():
+                    object.location.z =  locs[f]
+                    object.keyframe_insert(data_path = 'location',index = 2, frame = currentFrame)
+            elif "rotatex" in channel.lower():
+                object.rotation_euler.x = locs[f]*(math.pi/180)
+                object.keyframe_insert(data_path = 'rotation_euler',index = 0, frame = currentFrame)
+            elif "rotatey" in channel.lower():
+                object.rotation_euler.y = locs[f]*(math.pi/180)
+                object.keyframe_insert(data_path = 'rotation_euler',index = 1, frame = currentFrame)
+            elif "rotatez" in channel.lower():
+                object.rotation_euler.z = locs[f]*(math.pi/180)
+                object.keyframe_insert(data_path = 'rotation_euler',index = 2, frame = currentFrame)
+            
+                        
+
 	
