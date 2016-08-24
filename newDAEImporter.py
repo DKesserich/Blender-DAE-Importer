@@ -116,17 +116,50 @@ def meshBuilder(matName, Verts, Normals, UVCoords, vertOffset, normOffset, UVoff
 
 #If it ain't broke don't fix it. This function written by Dom2
 def CreateJoint(jnt_name,jnt_locn,jnt_rotn,jnt_context):
-	print("Creating joint" + jnt_name)
-	this_jnt = bpy.data.objects.new(jnt_name, None)
-	jnt_context.scene.objects.link(this_jnt)
-	pi = math.pi
-	this_jnt.rotation_euler.x = joint_rotation[0] * (pi/180.0)
-	this_jnt.rotation_euler.y = joint_rotation[1] * (pi/180.0)
-	this_jnt.rotation_euler.z = joint_rotation[2] * (pi/180.0)
-	this_jnt.location.x = float(jnt_locn[0])
-	this_jnt.location.y = float(jnt_locn[1])
-	this_jnt.location.z = float(jnt_locn[2])
-	return this_jnt
+    #print("Creating joint" + jnt_name)
+    this_jnt = bpy.data.objects.new(jnt_name, None)
+    jnt_context.scene.objects.link(this_jnt)
+    pi = math.pi
+    this_jnt.rotation_euler.x = joint_rotation[0] * (pi/180.0)
+    this_jnt.rotation_euler.y = joint_rotation[1] * (pi/180.0)
+    this_jnt.rotation_euler.z = joint_rotation[2] * (pi/180.0)
+    this_jnt.location.x = float(jnt_locn[0])
+    this_jnt.location.y = float(jnt_locn[1])
+    this_jnt.location.z = float(jnt_locn[2])
+    
+    if "dock" in jnt_name.lower():
+        if jnt_name.lower() is not "hold_dock":
+            jointProps = jnt_name.split("_")
+            
+            for p in jointProps:
+                if "flags" in p.lower():
+                    print(p)
+                    this_jnt["Flags"] = p[6:].rstrip("]")
+                if "link" in p.lower():
+                    print(p)
+                    this_jnt["Link"] = p[5:].rstrip("]")
+                if "fam" in p.lower():
+                    print(p)
+                    this_jnt["Fam"] = p[4:].rstrip("]")
+                    print(this_jnt["Fam"])
+                if "mad" in p.lower():
+                    print(p)
+                    this_jnt["MAD"] = p.lstrip("MAD[").rstrip("]") 
+            
+    if "seg" in jnt_name.lower():
+        jointProps = jnt_name.split("_")
+        this_jnt.empty_draw_type = "SPHERE"
+        
+        for p in jointProps:
+            if "flags" in p.lower():
+                this_jnt["Flags"] = p[6:].rstrip("]")
+            if "spd" in p.lower():
+                this_jnt["Speed"] = int(p[4:].rstrip("]"))
+            if "tol" in p.lower():
+                this_jnt.empty_draw_size = float(p[4:].rstrip("]"))
+                
+            
+    return this_jnt
 
 def CheckForChildren(node,context):
     for item in node:
@@ -207,7 +240,7 @@ for img in root.find(DAELibImages):
 #Make materials based on the Effects library
 for fx in root.find(DAELibEffects).iter(DAEfx):
     matname = fx.attrib["name"]
-    print(matname)   
+    #print(matname)   
    
     matTextures = []
     
@@ -233,7 +266,7 @@ for geo in root.iter(DAEGeo):
     UVs = []
     
     for source in mesh.iter(DAESource):
-        print("Source: " + source.attrib["id"])
+        #print("Source: " + source.attrib["id"])
         if "position" in source.attrib["id"].lower():
             rawVerts = [float(i) for i in source.find(DAEFloats).text.split()]
             #print(rawVerts)
@@ -242,12 +275,12 @@ for geo in root.iter(DAEGeo):
             rawNormals = [float(i) for i in source.find(DAEFloats).text.split()]
         
         if "uv" in source.attrib["id"].lower():
-            print("Found UV: "+source.attrib["id"])
+            #print("Found UV: "+source.attrib["id"])
             rawUVs = [float(i) for i in source.find(DAEFloats).text.split()]
             coords = [rawUVs[i:i+2] for i in range(0, len(rawUVs),2)]
             UVs.append(coords)
         
-    print("Num of UVs: "+str(len(UVs)))        
+    #print("Num of UVs: "+str(len(UVs)))        
     vertPositions = [rawVerts[i:i+3] for i in range(0, len(rawVerts),3)]
     meshNormals = [rawNormals[i:i+3] for i in range(0, len(rawNormals),3)]
     
@@ -277,8 +310,8 @@ for geo in root.iter(DAEGeo):
             splitPsoup = [int(i) for i in tris.find(DAEp).text.split()]
             pArray = [splitPsoup[i:i+(maxOffset+1)] for i in range(0, len(splitPsoup),(maxOffset+1))]
         #print(pArray)
-        print("Max Offset "+str(maxOffset))
-        print("UV Offsets "+str(len(UVOffsets)))
+        #print("Max Offset "+str(maxOffset))
+        #print("UV Offsets "+str(len(UVOffsets)))
         
         subMeshes.append(meshBuilder(material, vertPositions, meshNormals, UVs, vertOffset, normOffset, UVOffsets, pArray))
     
@@ -313,13 +346,13 @@ for anim in animLib.iter(DAEAnim):
         locs = []
         #D.objects[animLib[(animLib.getchildren().index(anim)-1)].attrib["name"]].select = True
         for source in anim.iter(DAESource):           
-            print(source.attrib["id"])
+           # print(source.attrib["id"])
             if "input" in source.attrib["id"].lower():
                 frames = [float(i) for i in source.find(DAEFloats).text.split()]
-                print(frames)
+                #print(frames)
             elif "output" in source.attrib["id"].lower():
                 locs = [float(i) for i in source.find(DAEFloats).text.split()]
-                print(locs)
+                #print(locs)
         #D.objects[(anim.find(DAEChannel).attrib["target"].split("/")[0])].select = True
         channel = anim.find(DAEChannel).attrib["target"].split("/")[1]
         object = D.objects[anim.find(DAEChannel).attrib["target"].split("/")[0]]
