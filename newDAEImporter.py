@@ -116,48 +116,81 @@ def meshBuilder(matName, Verts, Normals, UVCoords, vertOffset, normOffset, UVoff
 
 #If it ain't broke don't fix it. This function written by Dom2
 def CreateJoint(jnt_name,jnt_locn,jnt_rotn,jnt_context):
-    #print("Creating joint" + jnt_name)
-    this_jnt = bpy.data.objects.new(jnt_name, None)
-    jnt_context.scene.objects.link(this_jnt)
-    pi = math.pi
-    this_jnt.rotation_euler.x = joint_rotation[0] * (pi/180.0)
-    this_jnt.rotation_euler.y = joint_rotation[1] * (pi/180.0)
-    this_jnt.rotation_euler.z = joint_rotation[2] * (pi/180.0)
-    this_jnt.location.x = float(jnt_locn[0])
-    this_jnt.location.y = float(jnt_locn[1])
-    this_jnt.location.z = float(jnt_locn[2])
     
-    if "dock" in jnt_name.lower():
-        if jnt_name.lower() is not "hold_dock":
-            jointProps = jnt_name.split("_")
+    if 'navl' not in jnt_name.lower():
+        #print("Creating joint" + jnt_name)
+        this_jnt = bpy.data.objects.new(jnt_name, None)
+        jnt_context.scene.objects.link(this_jnt)
+        pi = math.pi
+        this_jnt.rotation_euler.x = joint_rotation[0] * (pi/180.0)
+        this_jnt.rotation_euler.y = joint_rotation[1] * (pi/180.0)
+        this_jnt.rotation_euler.z = joint_rotation[2] * (pi/180.0)
+        this_jnt.location.x = float(jnt_locn[0])
+        this_jnt.location.y = float(jnt_locn[1])
+        this_jnt.location.z = float(jnt_locn[2])
+    
+        if "dock" in jnt_name.lower():
+            if jnt_name.lower() is not "hold_dock":
+                jointProps = jnt_name.split("_")
             
+                for p in jointProps:
+                    if "flags" in p.lower():
+                        print(p)
+                        this_jnt["Flags"] = p[6:].rstrip("]")
+                    if "link" in p.lower():
+                        print(p)
+                        this_jnt["Link"] = p[5:].rstrip("]")
+                    if "fam" in p.lower():
+                        this_jnt["Fam"] = p[4:].rstrip("]")
+                    if "mad" in p.lower():
+                        print(p)
+                        this_jnt["MAD"] = p.lstrip("MAD[").rstrip("]") 
+            
+        if "seg" in jnt_name.lower():
+            jointProps = jnt_name.split("_")
+            this_jnt.empty_draw_type = "SPHERE"
+        
             for p in jointProps:
                 if "flags" in p.lower():
-                    print(p)
                     this_jnt["Flags"] = p[6:].rstrip("]")
-                if "link" in p.lower():
-                    print(p)
-                    this_jnt["Link"] = p[5:].rstrip("]")
-                if "fam" in p.lower():
-                    print(p)
-                    this_jnt["Fam"] = p[4:].rstrip("]")
-                    print(this_jnt["Fam"])
-                if "mad" in p.lower():
-                    print(p)
-                    this_jnt["MAD"] = p.lstrip("MAD[").rstrip("]") 
-            
-    if "seg" in jnt_name.lower():
-        jointProps = jnt_name.split("_")
-        this_jnt.empty_draw_type = "SPHERE"
+                if "spd" in p.lower():
+                    this_jnt["Speed"] = int(p[4:].rstrip("]"))
+                if "tol" in p.lower():
+                    this_jnt.empty_draw_size = float(p[4:].rstrip("]"))
+    else:
+        this_lamp = bpy.data.lamps.new(jnt_name,'POINT')
+        this_jnt = bpy.data.objects.new(jnt_name,this_lamp)
+        jnt_context.scene.objects.link(this_jnt)
+        pi = math.pi
+        this_jnt.rotation_euler.x = joint_rotation[0]*(pi/180.0)
+        this_jnt.rotation_euler.y = joint_rotation[1]*(pi/180.0)
+        this_jnt.rotation_euler.z = joint_rotation[2]*(pi/180.0)
+        this_jnt.location.x = float(jnt_locn[0])
+        this_jnt.location.y = float(jnt_locn[1])
+        this_jnt.location.z = float(jnt_locn[2])
         
-        for p in jointProps:
-            if "flags" in p.lower():
-                this_jnt["Flags"] = p[6:].rstrip("]")
-            if "spd" in p.lower():
-                this_jnt["Speed"] = int(p[4:].rstrip("]"))
-            if "tol" in p.lower():
-                this_jnt.empty_draw_size = float(p[4:].rstrip("]"))
-                
+        lampProps = jnt_name.split("_")
+        if 'type' not in jnt_name.lower():
+            this_lamp["Type"] = 'default'
+        for p in lampProps:
+            if 'sz' in p.lower():
+                this_lamp.energy = float(p[3:].rstrip("]"))
+            if 'ph' in p.lower():
+                this_lamp["Phase"] = float(p[3:].rstrip("]"))
+            if 'fr' in p.lower():
+                this_lamp["Freq"] = float(p[3:].rstrip("]"))
+            if 'col' in p.lower():
+                rgb = p[4:].rstrip("]").split(',')
+                this_lamp.color[0] = float(rgb[0])
+                this_lamp.color[1] = float(rgb[1])
+                this_lamp.color[2] = float(rgb[2])
+            if 'dist' in p.lower():
+                this_lamp.distance = float(p[5:].rstrip("]"))
+            if 'flags' in p.lower():
+                this_lamp["Flags"] = p[6:].rstrip("]")
+            if 'type' in p.lower():
+                this_lamp["Type"] = p[5:].rstrip("]")
+                     
             
     return this_jnt
 
